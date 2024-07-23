@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: nestjs-scheduler
+    labels:
+        app: nestjs-scheduler
+spec:
+    replicas: 1 # 파드의 복제본 수
+    selector:
+        matchLabels:
+            app: nestjs-scheduler
+    template:
+        metadata:
+            labels:
+                app: nestjs-scheduler
+        spec:
+            containers:
+                - name: nestjs-scheduler
+                  image: nestjs-scheduler:latest # 사용할 이미지
+                  imagePullPolicy: IfNotPresent
+                  ports:
+                      - containerPort: 3000 # 컨테이너에서 노출할 포트

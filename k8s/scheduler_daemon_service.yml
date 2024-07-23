@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+    name: nestjs-scheduler
+spec:
+    selector:
+        app: nestjs-scheduler
+    ports:
+        - protocol: TCP
+          port: 3000 # Cluster 내부에서 사용하는 포트 번호
+          targetPort: 3000 # Pod 에서 실제로 요청을 받을 포트
+    type: ClusterIP
