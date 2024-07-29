@@ -43,19 +43,39 @@ export class AppService {
 		}
 	}
 
-	@Cron('*/2 * * * * *')
-	firstWorker() {
-		const workerPath = makeWorkerPath(this.workerPath, 'worker_1');
-		this.runWorkers(workerPath, 'test task 1');
-	}
+	// // NOTE: Run worker parallel
+	// @Cron('*/2 * * * * *')
+	// firstWorker() {
+	// 	const workerPath = makeWorkerPath(this.workerPath, 'worker_1');
+	// 	this.runParallelWorkers(workerPath, 'test task 1');
+	// }
+	// @Cron('*/5 * * * * *')
+	// secondWorker() {
+	// 	const workerPath = makeWorkerPath(this.workerPath, 'worker_2');
+	// 	this.runParallelWorkers(workerPath, 'test task 2');
+	// }
 
-	@Cron('*/5 * * * * *')
-	secondWorker() {
-		const workerPath = makeWorkerPath(this.workerPath, 'worker_2');
-		this.runWorkers(workerPath, 'test task 2');
-	}
+	// // NOTE: Run workers (parallel vs sync)
+	// @Cron('*/10 * * * * *')
+	// async parallelWorker() {
+	// 	const workerPath = makeWorkerPath(this.workerPath, 'worker_2');
+	// 	this.logger.debug('parallelWorker start');
+	// 	this.runParallelWorkers(workerPath, 'test task 1');
+	// 	this.runParallelWorkers(workerPath, 'test task 2');
+	// 	this.runParallelWorkers(workerPath, 'test task 3');
+	// 	this.logger.debug('parallelWorker done');
+	// }
+	// @Cron('*/10 * * * * *')
+	// async syncWorker() {
+	// 	const workerPath = makeWorkerPath(this.workerPath, 'worker_2');
+	// 	this.logger.debug('syncWorker start');
+	// 	await this.runWorkerSync(workerPath, 'test task 1');
+	// 	await this.runWorkerSync(workerPath, 'test task 2');
+	// 	await this.runWorkerSync(workerPath, 'test task 3');
+	// 	this.logger.debug('syncWorker done');
+	// }
 
-	runWorkers(workerPath: string, data: string) {
+	runParallelWorkers(workerPath: string, data: string) {
 		const worker = new Worker(workerPath);
 
 		worker.postMessage({ threadId: worker.threadId, data });
@@ -86,6 +106,41 @@ export class AppService {
 			if (code !== 0) {
 				this.logger.error(`Worker stopped with exit code ${code}`);
 			}
+		});
+	}
+
+	runWorkerSync(workerPath: string, data: string) {
+		return new Promise((resolve, reject) => {
+			const worker = new Worker(workerPath);
+			worker.postMessage({ threadId: worker.threadId, data });
+
+			worker.on('message', async (message: ParentPortMessage) => {
+				const parentPortMessageType = message.type;
+				const messageLog = makeWorkerOnMessageLog(message);
+
+				switch (parentPortMessageType) {
+					case 'completed':
+						this.logger.log(messageLog);
+						break;
+					case 'error':
+						// await sendSlackBot(this.logger, messageLog);
+						this.logger.error(messageLog);
+						break;
+				}
+
+				resolve(worker.terminate());
+			});
+
+			worker.on('error', async (error) => {
+				this.logger.error(error);
+				reject(worker.terminate());
+			});
+
+			worker.on('exit', (code) => {
+				if (code !== 0) {
+					reject(this.logger.error(`Worker stopped with exit code ${code}`));
+				}
+			});
 		});
 	}
 }
