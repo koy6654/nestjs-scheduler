@@ -43,12 +43,12 @@ export class AppService {
 		}
 	}
 
-	// // NOTE: Run worker parallel
-	// @Cron('*/2 * * * * *')
-	// firstWorker() {
-	// 	const workerPath = makeWorkerPath(this.workerPath, 'worker_1');
-	// 	this.runParallelWorkers(workerPath, 'test task 1');
-	// }
+	// NOTE: Run worker parallel
+	@Cron('*/5 * * * * *')
+	weatherWorker() {
+		const workerPath = makeWorkerPath(this.workerPath, 'weather_worker');
+		this.runParallelWorkers(workerPath, 'test task 1');
+	}
 	// @Cron('*/5 * * * * *')
 	// secondWorker() {
 	// 	const workerPath = makeWorkerPath(this.workerPath, 'worker_2');
